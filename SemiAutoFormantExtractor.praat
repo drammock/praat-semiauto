@@ -8,10 +8,15 @@
 # 
 # By default, the script will show a wideband spectrogram (from 0-5000Hz) and a formant track while running, but will
 # not show pitch, pulses, intensity, etc.  If you want to see additional analyses, change the arguments of the line that starts
-# "Show analyses" (lines 214 & 217).  If you want to change the underlying spectrogram settings, change lines 205-206.
-# VERSION 0.2 (2012.05.25)
+# "Show analyses" (lines 165 & 168).  If you want to change the underlying spectrogram settings, change lines 205-206.
+# VERSION 0.3 (2012.05.05)
 #
 # CHANGELOG
+# VERSION 0.3:	Major reorganization of code (several complex control structures moved into procedures). Bug fixed where
+#               sometimes all time points through the interval were written out with values from the midpoint. Major
+#               improvements to efficiency by using formant values drawn from the editor window (since it's already open
+#               anyway) rather than extracting a sound slice and creating a formant object from it.
+#
 # VERSION 0.2:	No significant code changes.  Moderate improvements to documentation.  License changed from CC to GPL.
 #
 # AUTHORS: DANIEL MCCLOY: (drmccloy@uw.edu) & AUGUST MCGRATH
@@ -30,7 +35,7 @@ form Select directories for TextGrids and Sound files
 	integer Starting_file_number 1
 	comment How many seconds of the sound file do you want to
 	comment see during analysis? (enter "0" to view the entire file)
-	real Zoom_duration 6
+	real Zoom_duration 1
 	comment Full path of the output file:
 	sentence Output_file /home/dan/Desktop/FormantAnalysisResults.txt
 	comment Default formant tracker settings (you can adjust "max formant" and 
@@ -51,24 +56,16 @@ form Select directories for TextGrids and Sound files
 		option 5%, 10%, 20%, 50%, 80%, 90%, 95%
 endform
 
-# CALCULATE HOW MANY FORMANT MEASUREMENTS PER INTERVAL
-if interval_measurement_option = 1
-	total_interval_measurements = 1
-elif interval_measurement_option = 2 or interval_measurement_option = 3 or interval_measurement_option = 4
-	total_interval_measurements = 3
-elif interval_measurement_option = 5
-	total_interval_measurements = 5
-elif interval_measurement_option = 6
-	total_interval_measurements = 7
-endif
+# RUN SOME FUNCTIONS ON THE USER INPUT (TO BE USED LATER)
+call pointsPerInterval
 
 # BE FORGIVING IF THE USER FORGOT TRAILING PATH SLASHES OR LEADING FILE EXTENSION DOTS
 call cleanPath 'textgrid_directory$'
-textgrid_dir$ = "'cleanPath.output$'"
+textgrid_dir$ = "'cleanPath.out$'"
 call cleanPath 'sound_directory$'
-sound_dir$ = "'cleanPath.output$'"
+sound_dir$ = "'cleanPath.out$'"
 call cleanExtn 'sound_extension$'
-sound_extn$ = "'cleanExtn.output$'"
+sound_extn$ = "'cleanExtn.out$'"
 
 # INITIATE THE OUTPUT FILE
 if fileReadable (output_file$)
@@ -141,53 +138,10 @@ for current_file from starting_file_number to file_count
 					zoom_start = left_edge
 					zoom_end = right_edge
 				endif
-			else
+			else  ;  zoom_duration = 0
 				zoom_start = 0
 				zoom_end = total_duration
-			endif
-
-			# CALCULATE TIME POINTS FOR FORMANT MEASUREMENTS
-			# MIDPOINT ONLY
-			if interval_measurement_option = 1
-				intrvl_meas_time [1] = midpoint
-
-			# ONSET-MIDPOINT-OFFSET
-			elif interval_measurement_option = 2
-				intrvl_meas_time [1] = start
-				intrvl_meas_time [2] = midpoint
-				intrvl_meas_time [3] = end
-
-			# 20%-50%-80%
-			elif interval_measurement_option = 3
-				intrvl_meas_time [1] = start + 0.2*(end-start)
-				intrvl_meas_time [2] = midpoint
-				intrvl_meas_time [3] = start + 0.8*(end-start)
-
-			# 25%-50%-75%
-			elif interval_measurement_option = 4
-				intrvl_meas_time [1] = start + 0.25*(end-start)
-				intrvl_meas_time [2] = midpoint
-				intrvl_meas_time [3] = start + 0.75*(end-start)
-
-			# 10%-30%-50%-70%-90%
-			elif interval_measurement_option = 5
-				intrvl_meas_time [1] = start + 0.1*(end-start)
-				intrvl_meas_time [2] = start + 0.3*(end-start)
-				intrvl_meas_time [3] = midpoint
-				intrvl_meas_time [4] = start + 0.7*(end-start)
-				intrvl_meas_time [5] = start + 0.9*(end-start)
-
-			# 5%-10%-20%-50%-80%-90%-95%
-			elif interval_measurement_option = 6
-				intrvl_meas_time [1] = start + 0.05*(end-start)
-				intrvl_meas_time [2] = start + 0.1*(end-start)
-				intrvl_meas_time [3] = start + 0.2*(end-start)
-				intrvl_meas_time [4] = midpoint
-				intrvl_meas_time [5] = start + 0.8*(end-start)
-				intrvl_meas_time [6] = start + 0.9*(end-start)
-				intrvl_meas_time [7] = start + 0.95*(end-start)
-			endif
-			current_time_point = intrvl_meas_time [1]
+			endif  ;  zoom_duration
 
 			if new_file = 1
 				# IF THIS IS THE FIRST INTERVAL OF THE CURRENT FILE, SHOW THE EDITOR WINDOW
@@ -207,31 +161,38 @@ for current_file from starting_file_number to file_count
 					Formant settings... default_max_formant default_formant_number window_length dynamic_range dot_size
 					Advanced formant settings... burg preemphasis_from
 
-					# PLACE CURSOR AT FIRST MEASUREMENT POINT AND SHOW THE FORMANT TRACKS
-					Move cursor to... current_time_point
+					# SHOW THE FORMANT TRACKS
 					if not zoom_duration = 0
 						# MAKE SURE THE "MAX ANALYSIS" SETTING IS LONG ENOUGH SO THE SPECTROGRAM ACTUALLY SHOWS UP
-						Show analyses... yes no no yes no zoom_duration+1
+						Show analyses... yes no no yes no zoom_duration*2
 					else
 						# THE USER SPECIFED "WHOLE FILE" SO WE ASSUME THE FILES ARE SHORT AND 10 SECONDS SHOULD BE ENOUGH
 						Show analyses... yes yes no yes no 10
 					endif
 				endeditor
+				
 			else
-				# WE'RE NOT IN THE FIRST LABELED INTERVAL, SO THE EDITOR IS ALREADY OPEN & THE SETTINGS ARE ALREADY SET,
-				# SO JUST MOVE TO THE RIGHT PART OF THE FILE
+				# WE'RE NOT IN THE FIRST LABELED INTERVAL, SO EDITOR IS OPEN & SETTINGS ARE SET, SO JUST MOVE TO THE CURRENT INTERVAL
 				editor TextGrid 'filename$'
 					Zoom... zoom_start zoom_end
-					Move cursor to... current_time_point
 				endeditor
 			endif
 			new_file = 0
 
 			# INITIALIZE SOME VARIABLES FOR THE PAUSE U.I.
-			clicked = 4
+			clicked = 0
 			max_formant = default_max_formant
 			formant_number = default_formant_number
+			call getMeasureTimes
+			call getFormants
+			call makeFormantTable
+			current_time_point = getMeasureTimes.time[1]
 			current_interval_measurement = 1
+
+			# PLACE CURSOR AT FIRST MEASUREMENT POINT
+			editor TextGrid 'filename$'
+				Move cursor to... current_time_point
+			endeditor
 
 			# SHOW A U.I. WITH FORMANT TRACKER SETTINGS & MEASURED FORMANT VALUES.
 			# KEEP SHOWING IT UNTIL THE USER ACCEPTS OR CANCELS THE MEASUREMENT FOR THIS INTERVAL.
@@ -247,149 +208,68 @@ for current_file from starting_file_number to file_count
 					comment (" ")
 					comment ("Formant measurements:")
 
-					# CREATE HEADER ROW FOR THE FORMANT TABLE.  NOTE THERE ARE SOME EXTRA SPACES TO GET EVERYTHING TO LINE UP.
-					# MIDPOINT LABEL
-					if interval_measurement_option = 1
-						comment ("'tab$''tab$'midpoint")
-						
-					# ONSET-MIDPOINT-OFFSET LABEL
-					elif interval_measurement_option = 2
-						comment ("'tab$''tab$'onset'tab$' mid'tab$'offset")
-						
-					# 20-50-80 LABEL
-					elif interval_measurement_option = 3
-						comment ("'tab$''tab$' 20%'tab$' 50%'tab$' 80%")
-						
-					# 25-50-75 LABEL
-					elif interval_measurement_option = 4
-						comment ("'tab$''tab$' 25%'tab$' 50%'tab$' 75%")
-						
-					# 10-30-50-70-90 LABEL
-					elif interval_measurement_option = 5
-						comment ("'tab$''tab$' 10%'tab$' 30%'tab$' 50%'tab$' 70%'tab$' 90%")
-						
-					# 5-10-20-50-80-90-95 LABEL
-					elif interval_measurement_option = 6
-						comment ("'tab$''tab$' 5%'tab$''tab$' 10%'tab$' 20%'tab$' 50%'tab$' 80%'tab$' 90%'tab$' 95%")
-					endif
-
 					# CREATE THE FORMANT TABLE
-					# MIDPOINT TABLE
-					if interval_measurement_option = 1
-						editor TextGrid 'filename$'
-							f3_50 = Get third formant
-							f2_50 = Get second formant
-							f1_50 = Get first formant
-						endeditor
-						comment ("'tab$'F3'tab$' 'f3_50:0'")
-						comment ("'tab$'F2'tab$' 'f2_50:0'")
-						comment ("'tab$'F1'tab$' 'f1_50:0'")
-					# THREE POINT TABLE
-					elif interval_measurement_option = 2 or interval_measurement_option = 3 or interval_measurement_option = 4
-						editor TextGrid 'filename$'
-							for i from 1 to total_interval_measurements
-								Move cursor to... intrvl_meas_time[i]
-								f3[i] = Get third formant
-								f2[i] = Get second formant
-								f1[i] = Get first formant
-							endfor
-						endeditor
-						comment ("'tab$'F3'tab$' 'f3[1]:0''tab$' 'f3[2]:0''tab$' 'f3[3]:0'")
-						comment ("'tab$'F2'tab$' 'f2[1]:0''tab$' 'f2[2]:0''tab$' 'f2[3]:0'")
-						comment ("'tab$'F1'tab$' 'f1[1]:0''tab$' 'f1[2]:0''tab$' 'f1[3]:0'")
-					# FIVE POINT TABLE
-					elif interval_measurement_option = 5
-						editor TextGrid 'filename$'
-							for i from 1 to total_interval_measurements
-								Move cursor to... intrvl_meas_time[i]
-								f3[i] = Get third formant
-								f2[i] = Get second formant
-								f1[i] = Get first formant
-							endfor
-						endeditor
-						comment ("'tab$'F3'tab$' 'f3[1]:0''tab$' 'f3[2]:0''tab$' 'f3[3]:0''tab$' 'f3[4]:0''tab$' 'f3[5]:0'")
-						comment ("'tab$'F2'tab$' 'f2[1]:0''tab$' 'f2[2]:0''tab$' 'f2[3]:0''tab$' 'f2[4]:0''tab$' 'f2[5]:0'")
-						comment ("'tab$'F1'tab$' 'f1[1]:0''tab$' 'f1[2]:0''tab$' 'f1[3]:0''tab$' 'f1[4]:0''tab$' 'f1[5]:0'")
-					# SEVEN POINT TABLE
-					elif interval_measurement_option = 6
-						editor TextGrid 'filename$'
-							for i from 1 to total_interval_measurements
-								Move cursor to... intrvl_meas_time[i]
-								f3[i] = Get third formant
-								f2[i] = Get second formant
-								f1[i] = Get first formant
-							endfor
-						endeditor
-						comment ("'tab$'F3'tab$' 'f3[1]:0''tab$' 'f3[2]:0''tab$' 'f3[3]:0''tab$' 'f3[4]:0''tab$' 'f3[5]:0''tab$' 'f3[6]:0''tab$' 'f3[7]:0'")
-						comment ("'tab$'F2'tab$' 'f2[1]:0''tab$' 'f2[2]:0''tab$' 'f2[3]:0''tab$' 'f2[4]:0''tab$' 'f2[5]:0''tab$' 'f2[6]:0''tab$' 'f2[7]:0'")
-						comment ("'tab$'F1'tab$' 'f1[1]:0''tab$' 'f1[2]:0''tab$' 'f1[3]:0''tab$' 'f1[4]:0''tab$' 'f1[5]:0''tab$' 'f1[6]:0''tab$' 'f1[7]:0'")
-					endif
+					call getFormants
+					call formantTable
+					comment ("'formantTable.header$'")
+					comment ("'formantTable.f3$'")
+					comment ("'formantTable.f2$'")
+					comment ("'formantTable.f1$'")
 					comment (" ")
 					sentence ("Notes_or_comments", "")
 				clicked = endPause ("Play", "Redraw", "Skip", "Accept", 4)
-				max_formant = new_max_formant
-				formant_number = new_number_formants
-				editor TextGrid 'filename$'
-					Formant settings... max_formant formant_number window_length dynamic_range dot_size
-				endeditor
 
 				# IF THEY CLICKED "PLAY"
 				if clicked = 1
 					editor TextGrid 'filename$'
 						Play... start end
 					endeditor
+
+				# IF THEY CLICKED "REDRAW"
+				elif clicked = 2
+					max_formant = new_max_formant
+					formant_number = new_number_formants
+					editor TextGrid 'filename$'
+						Formant settings... max_formant formant_number window_length dynamic_range dot_size
+					endeditor
 				endif
 
 			until clicked >2
 			# END OF THE PAUSE U.I.
 
-			# IF THE USER SKIPS THE INTERVAL...
-			if clicked = 3
-				# WRITE ZEROES
-				for i from 1 to total_interval_measurements
-					time = intrvl_meas_time [i]
-					printline 'time'
-					percent = ((time-start)/(end-start))*100
+			# THE USER HAS EITHER ACCEPTED OR SKIPPED, SO WRITE OUT THE VALUES 
+			for i from 1 to pointsPerInterval.pts
+				time = getMeasureTimes.time[i]
+				percent = ((time-start)/(end-start))*100			
+				if clicked = 3
+					# MARK FOR HAND MEASUREMENT
 					f1 = 0
 					f2 = 0
 					f3 = 0
-					# WRITE TO FILE
-					resultline$ = "'current_file''tab$''filename$''tab$''label$''tab$''percent:0''tab$''time''tab$''f1''tab$''f2''tab$''f3''tab$''max_formant''tab$''formant_number''tab$''notes_or_comments$''newline$'"
-					fileappend "'output_file$'" 'resultline$'
-				endfor
+				elif clicked = 4
+					# GET MEASURED VALUES
+					f1 = getFormants.f1[i]
+					f2 = getFormants.f2[i]
+					f3 = getFormants.f3[i]
+				endif
 
-			# IF THE USER ACCEPTS THE FORMANT VALUES...
-			elif clicked = 4
-				# CREATE A FORMANT OBJECT WITH THE CURRENT SETTINGS AND TAKE THE MEASUREMENT
-				select LongSound 'filename$'
-				Extract part... start end yes
-				select Sound 'filename$'
-				To Formant (burg)... time_step formant_number max_formant window_length preemphasis_from
-				select Formant 'filename$'
-				for i from 1 to total_interval_measurements
-					time = intrvl_meas_time [i]
-					percent = ((time-start)/(end-start))*100
-					f1 = Get value at time... 1 time Hertz Linear
-					f2 = Get value at time... 2 time Hertz Linear
-					f3 = Get value at time... 3 time Hertz Linear
-					# WRITE TO FILE
-					resultline$ = "'current_file''tab$''filename$''tab$''label$''tab$''percent:0''tab$''time''tab$''f1''tab$''f2''tab$''f3''tab$''max_formant''tab$''formant_number''tab$''notes_or_comments$''newline$'"
-					fileappend "'output_file$'" 'resultline$'
-				endfor
-
-				# REMOVE THE EXTRACTED SOUND AND FORMANT OBJECT, SINCE LATER INTERVALS IN THIS FILE MAY GET DIFFERENT SETTINGS AND THUS GET EXTRACTED ANEW
-				plus Sound 'filename$'
-				Remove
-			endif
-		endif
-	endfor
+				# WRITE OUT TO FILE
+				resultline$ = "'current_file''tab$''filename$''tab$''label$''tab$''percent:0''tab$''time''tab$''f1''tab$''f2''tab$''f3''tab$''max_formant''tab$''formant_number''tab$''notes_or_comments$''newline$'"
+				fileappend "'output_file$'" 'resultline$'
+				
+			endfor ; EACH POINT IN THE INTERVAL
+			
+		endif ; LABEL <> ""
+		
+	endfor ; EACH INTERVAL IN THE FILE
 
 	# REMOVE ALL THE OBJECTS FOR THAT FILE AND GO ON TO THE NEXT ONE
 	select LongSound 'filename$'
 	plus TextGrid 'filename$'
 	Remove
 	select Strings list
-endfor
+	
+endfor ; EACH FILE IN THE FOLDER
 
 # REMOVE THE STRINGS LIST AND GIVE A SUCCESS MESSAGE
 select Strings list
@@ -398,24 +278,141 @@ clearinfo
 files_read = file_count - starting_file_number + 1
 printline Done! 'files_read' files read.'newline$'
 
-# FUNCTIONS (A.K.A. PROCEDURES) THAT WERE CALLED EARLIER
-procedure cleanPath .input$
-	if not right$(.input$, 1) = "/"
-		.output$ = "'.input$'" + "/"
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# FUNCTIONS (A.K.A. PROCEDURES) THAT WERE CALLED EARLIER  #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+procedure cleanPath .in$
+	if not right$(.in$, 1) = "/"
+		.out$ = "'.in$'" + "/"
 	else
-		.output$ = "'.input$'"
+		.out$ = "'.in$'"
 	endif
 endproc
 
-procedure cleanExtn .input$
-	if not left$(.input$, 1) = "."
-		.output$ = "." + "'.input$'"
+procedure cleanExtn .in$
+	if not left$(.in$, 1) = "."
+		.out$ = "." + "'.in$'"
 	else
-		.output$ = "'.input$'"
+		.out$ = "'.in$'"
 	endif
 endproc
 
 procedure initializeOutfile
 	headerline$ = "number'tab$'filename'tab$'label'tab$'percent through interval'tab$'measurement time'tab$'F1'tab$'F2'tab$'F3'tab$'max formant'tab$'number of formants'tab$'notes'newline$'"
 	fileappend "'output_file$'" 'headerline$'
+endproc
+
+procedure pointsPerInterval
+# CALCULATE HOW MANY FORMANT MEASUREMENTS PER INTERVAL
+	if interval_measurement_option = 1
+		.pts = 1
+	elif interval_measurement_option = 2 or interval_measurement_option = 3 or interval_measurement_option = 4
+		.pts = 3
+	elif interval_measurement_option = 5
+		.pts = 5
+	elif interval_measurement_option = 6
+		.pts = 7
+	endif
+endproc
+
+procedure getMeasureTimes
+	# MIDPOINT ONLY
+	if interval_measurement_option = 1
+		.time [1] = midpoint
+
+	# ONSET-MIDPOINT-OFFSET
+	elif interval_measurement_option = 2
+		.time [1] = start
+		.time [2] = midpoint
+		.time [3] = end
+
+	# 20-50-80
+	elif interval_measurement_option = 3
+		.time [1] = start + 0.2*(end-start)
+		.time [2] = midpoint
+		.time [3] = start + 0.8*(end-start)
+
+	# 25-50-75
+	elif interval_measurement_option = 4
+		.time [1] = start + 0.25*(end-start)
+		.time [2] = midpoint
+		.time [3] = start + 0.75*(end-start)
+
+	# 10-30-50-70-90
+	elif interval_measurement_option = 5
+		.time [1] = start + 0.1*(end-start)
+		.time [2] = start + 0.3*(end-start)
+		.time [3] = midpoint
+		.time [4] = start + 0.7*(end-start)
+		.time [5] = start + 0.9*(end-start)
+
+	# 5-10-20-50-80-90-95
+	elif interval_measurement_option = 6
+		.time [1] = start + 0.05*(end-start)
+		.time [2] = start + 0.1*(end-start)
+		.time [3] = start + 0.2*(end-start)
+		.time [4] = midpoint
+		.time [5] = start + 0.8*(end-start)
+		.time [6] = start + 0.9*(end-start)
+		.time [7] = start + 0.95*(end-start)
+	endif
+endproc
+
+procedure getFormants
+	editor TextGrid 'filename$'
+		for i from 1 to pointsPerInterval.pts
+			Move cursor to... getMeasureTimes.time[i]
+			.f3 [i] = Get third formant
+			.f2 [i] = Get second formant
+			.f1 [i] = Get first formant
+		endfor
+	endeditor
+endproc
+
+procedure makeFormantTable
+# NOTE: THE EXTRA SPACES ARE INTENTIONAL, TO GET EVERYTHING TO LINE UP PROPERLY IN COLUMNS IN THE PAUSE WINDOW
+	# MIDPOINT ONLY
+	if interval_measurement_option = 1
+		.header$ = "'tab$''tab$'midpoint"
+		.f3$ = "'tab$'F3'tab$' 'getFormants.f3[1]:0'"
+		.f2$ = "'tab$'F2'tab$' 'getFormants.f2[1]:0'"
+		.f1$ = "'tab$'F1'tab$' 'getFormants.f1[1]:0'"
+
+	# ONSET-MIDPOINT-OFFSET
+	elif interval_measurement_option = 2
+		.header$ = "'tab$''tab$'onset'tab$' mid'tab$'offset"
+		.f3$ = "'tab$'F3'tab$' 'getFormants.f3[1]:0''tab$' 'getFormants.f3[2]:0''tab$' 'getFormants.f3[3]:0'"
+		.f2$ = "'tab$'F2'tab$' 'getFormants.f2[1]:0''tab$' 'getFormants.f2[2]:0''tab$' 'getFormants.f2[3]:0'"
+		.f1$ = "'tab$'F1'tab$' 'getFormants.f1[1]:0''tab$' 'getFormants.f1[2]:0''tab$' 'getFormants.f1[3]:0'"
+
+	# 20-50-80
+	elif interval_measurement_option = 3
+		.header$ = "'tab$''tab$' 20%'tab$' 50%'tab$' 80%"
+		.f3$ = "'tab$'F3'tab$' 'getFormants.f3[1]:0''tab$' 'getFormants.f3[2]:0''tab$' 'getFormants.f3[3]:0'"
+		.f2$ = "'tab$'F2'tab$' 'getFormants.f2[1]:0''tab$' 'getFormants.f2[2]:0''tab$' 'getFormants.f2[3]:0'"
+		.f1$ = "'tab$'F1'tab$' 'getFormants.f1[1]:0''tab$' 'getFormants.f1[2]:0''tab$' 'getFormants.f1[3]:0'"
+
+	# 25-50-75
+	elif interval_measurement_option = 4
+		.header$ = "'tab$''tab$' 25%'tab$' 50%'tab$' 75%"
+		.f3$ = "'tab$'F3'tab$' 'getFormants.f3[1]:0''tab$' 'getFormants.f3[2]:0''tab$' 'getFormants.f3[3]:0'"
+		.f2$ = "'tab$'F2'tab$' 'getFormants.f2[1]:0''tab$' 'getFormants.f2[2]:0''tab$' 'getFormants.f2[3]:0'"
+		.f1$ = "'tab$'F1'tab$' 'getFormants.f1[1]:0''tab$' 'getFormants.f1[2]:0''tab$' 'getFormants.f1[3]:0'"
+
+	# 10-30-50-70-90
+	elif interval_measurement_option = 5
+		.header$ = "'tab$''tab$' 10%'tab$' 30%'tab$' 50%'tab$' 70%'tab$' 90%"
+		.f3$ = "'tab$'F3'tab$' 'getFormants.f3[1]:0''tab$' 'getFormants.f3[2]:0''tab$' 'getFormants.f3[3]:0''tab$' 'getFormants.f3[4]:0''tab$' 'getFormants.f3[5]:0'"
+		.f2$ = "'tab$'F2'tab$' 'getFormants.f2[1]:0''tab$' 'getFormants.f2[2]:0''tab$' 'getFormants.f2[3]:0''tab$' 'getFormants.f2[4]:0''tab$' 'getFormants.f2[5]:0'"
+		.f1$ = "'tab$'F1'tab$' 'getFormants.f1[1]:0''tab$' 'getFormants.f1[2]:0''tab$' 'getFormants.f1[3]:0''tab$' 'getFormants.f1[4]:0''tab$' 'getFormants.f1[5]:0'"
+
+	# 5-10-20-50-80-90-95
+	elif interval_measurement_option = 6
+		.header$ = "'tab$''tab$' 5%'tab$''tab$' 10%'tab$' 20%'tab$' 50%'tab$' 80%'tab$' 90%'tab$' 95%"
+		.f3$ = "'tab$'F3'tab$' 'getFormants.f3[1]:0''tab$' 'getFormants.f3[2]:0''tab$' 'getFormants.f3[3]:0''tab$' 'getFormants.f3[4]:0''tab$' 'getFormants.f3[5]:0''tab$' 'getFormants.f3[6]:0''tab$' 'getFormants.f3[7]:0'"
+		.f2$ = "'tab$'F2'tab$' 'getFormants.f2[1]:0''tab$' 'getFormants.f2[2]:0''tab$' 'getFormants.f2[3]:0''tab$' 'getFormants.f2[4]:0''tab$' 'getFormants.f2[5]:0''tab$' 'getFormants.f2[6]:0''tab$' 'getFormants.f2[7]:0'"
+		.f1$ = "'tab$'F1'tab$' 'getFormants.f1[1]:0''tab$' 'getFormants.f1[2]:0''tab$' 'getFormants.f1[3]:0''tab$' 'getFormants.f1[4]:0''tab$' 'getFormants.f1[5]:0''tab$' 'getFormants.f1[6]:0''tab$' 'getFormants.f1[7]:0'"
+	endif
 endproc
