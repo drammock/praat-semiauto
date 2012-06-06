@@ -210,11 +210,11 @@ for current_file from starting_file_number to file_count
 
 					# CREATE THE FORMANT TABLE
 					call getFormants
-					call formantTable
-					comment ("'formantTable.header$'")
-					comment ("'formantTable.f3$'")
-					comment ("'formantTable.f2$'")
-					comment ("'formantTable.f1$'")
+					call makeFormantTable
+					comment ("'makeFormantTable.header$'")
+					comment ("'makeFormantTable.f3$'")
+					comment ("'makeFormantTable.f2$'")
+					comment ("'makeFormantTable.f1$'")
 					comment (" ")
 					sentence ("Notes_or_comments", "")
 				clicked = endPause ("Play", "Redraw", "Skip", "Accept", 4)
