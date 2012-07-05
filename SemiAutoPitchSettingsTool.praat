@@ -1,6 +1,6 @@
 # # # # # # # # # # # # # # # # # # # # # # # #
 # PRAAT SCRIPT "SEMI-AUTO PITCH SETTINGS TOOL"
-# This script semi-automates extracting pitch tiers from sound files.  It cycles through a directory of sound files, opens them one at a time, displays the pitch contour over a narrowband spectrogram, and prompts the user to either: (1) accept the pitch settings, (2) adjust the pitch floor/ceiling and redraw, or (3) mark the file as unmeasurable, before continuing on to the next file.  Filename, duration, and pitch settings are saved to a tab-delimited file.  The main purpose of this script is as a "feeder" for other scripts that are designed to perform fully automated tasks based on pitch analysis settings read in from the output of this script.  The advantage to this approach is that there is a permanent record of the pitch settings used in later analyses, and those settings are assured to be appropriate for each file (thereby minimizing or eliminating pitch halving/doubling errors).
+# This script semi-automates the process of determining appropraite pitch settings for analysis of sound files.  It cycles through a directory of sound files, opens them one at a time, displays the pitch contour over a narrowband spectrogram, and prompts the user to either: (1) accept the pitch settings, (2) adjust the pitch floor/ceiling and redraw, or (3) mark the file as unmeasurable, before continuing on to the next file.  Filename, duration, and pitch settings are saved to a tab-delimited file.  The main purpose of this script is as a "feeder" for other scripts that are designed to perform fully automated tasks based on pitch analysis settings read in from the output of this script.  The advantage to this approach is that there is a permanent record of the pitch settings used in later analyses, and those settings are assured to be appropriate for each file (thereby minimizing or eliminating pitch halving/doubling errors).
 #
 # FORM INSTRUCTIONS
 # "logFile" should specify the FULL PATH of the log file.  The log file will store the sequential number, filename, duration, pitch floor and ceiling settings, and notes for each file.  "startingFileNum" allows you to pick up where you left off if you're processing a lot of files: just look at your log file from last time and enter the next number in sequence from the "number" column (if you do this, be sure to click "Append" when asked if you want to overwrite the existing log file).  If "carryover" is unchecked, then each new file analyzed will start out with the default pitch settings.  Otherwise, each new file (after the first one) will start out with the accepted settings from the preceding file (unless the preceding file was skipped, in which case the settings will revert to default).
@@ -18,10 +18,8 @@
 # COLLECT ALL THE USER INPUT
 form Pitch settings tool: Select directories & starting parameters
 	comment See the script's header for explanation of the form variables.
-#	sentence Sound_directory /home/dan/Desktop/sounds
-#	sentence logFile /home/dan/Desktop/PitchSettings.log
-	sentence Sound_directory /Users/grant/Documents/NIHSouzaWright/PROJECTS/Dialect3/Dialect3 Stimuli/postRMS stims - wav files
-	sentence logFile /Users/grant/Desktop/PitchSettings.log
+	sentence Sound_directory /home/dan/Desktop/sounds
+	sentence logFile /home/dan/Desktop/PitchSettings.log
 	sentence Sound_extension .wav
 	integer startingFileNum 1
 	integer defaultMinPitch 50
