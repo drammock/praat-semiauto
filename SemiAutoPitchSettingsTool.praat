@@ -1,18 +1,19 @@
 # # # # # # # # # # # # # # # # # # # # # # # #
 # PRAAT SCRIPT "SEMI-AUTO PITCH SETTINGS TOOL"
-# This script semi-automates the process of determining appropraite pitch settings for analysis of sound files.  It cycles through a directory of sound files, opens them one at a time, displays the pitch contour over a narrowband spectrogram, and prompts the user to either: (1) accept the pitch settings, (2) adjust the pitch floor/ceiling and redraw, or (3) mark the file as unmeasurable, before continuing on to the next file.  Filename, duration, and pitch settings are saved to a tab-delimited file.  The main purpose of this script is as a "feeder" for other scripts that are designed to perform fully automated tasks based on pitch analysis settings read in from the output of this script.  The advantage to this approach is that there is a permanent record of the pitch settings used in later analyses, and those settings are assured to be appropriate for each file (thereby minimizing or eliminating pitch halving/doubling errors).
+# This script semi-automates the process of determining appropriate pitch settings for analysis of sound files.  It cycles through a directory of sound files, opens them one at a time, displays the pitch contour over a narrowband spectrogram, and prompts the user to either: (1) accept the pitch settings, (2) adjust the pitch floor/ceiling and redraw, or (3) mark the file as unmeasurable, before continuing on to the next file.  Filename, duration, and pitch settings are saved to a tab-delimited file.  The main purpose of this script is as a "feeder" for other scripts that are designed to perform fully automated tasks based on pitch analysis settings read in from the output of this script.  The advantage to this approach is that there is a permanent record of the pitch settings used in later analyses, and those settings are assured to be appropriate for each file (thereby minimizing or eliminating pitch halving/doubling errors).
 #
 # FORM INSTRUCTIONS
-# "logFile" should specify the FULL PATH of the log file.  The log file will store the sequential number, filename, duration, pitch floor and ceiling settings, and notes for each file.  "startingFileNum" allows you to pick up where you left off if you're processing a lot of files: just look at your log file from last time and enter the next number in sequence from the "number" column (if you do this, be sure to click "Append" when asked if you want to overwrite the existing log file).  If "carryover" is unchecked, then each new file analyzed will start out with the default pitch settings.  Otherwise, each new file (after the first one) will start out with the accepted settings from the preceding file (unless the preceding file was skipped, in which case the settings will revert to default).
+# "logFile" should specify the FULL PATH of the log file.  The log file will store the sequential number, filename, duration, pitch floor and ceiling settings, and notes for each file.  "startingFileNum" allows you to pick up where you left off if you're processing a lot of files: just look at your log file from last time and enter the next number in sequence from the "number" column (if you do this, be sure to click "Append" when asked if you want to overwrite the existing log file).  The setting "defaultZoomDuration" is measured in seconds; if it is zero or negative, the whole duration of the file will be displayed.  If "carryover" is unchecked, then each new file analyzed will start out with the default pitch settings.  Otherwise, each new file (after the first one) will start out with the accepted settings from the preceding file (unless the preceding file was skipped, in which case the settings will revert to default).
 # 
-# VERSION 0.2 (2012 07 05)
+# VERSION 0.3 (2013 01 31)
 #
 # CHANGELOG
+# VERSION 0.3: added default zoom duration setting
 # VERSION 0.2: added autoplay functionality, ability to adjust octave jump cost file-by-file, and ability to set pitch viewing range.
 #
 # AUTHOR: DANIEL MCCLOY: (drmccloy@uw.edu)
 # LICENSED UNDER THE GNU GENERAL PUBLIC LICENSE v3.0: http://www.gnu.org/licenses/gpl.html
-# DEVELOPMENT OF THIS SCRIPT WAS FUNDED BY THE NATIONAL INSTITUTES OF HEALTH, GRANT # 10186254 TO PAMELA SOUZA
+# DEVELOPMENT OF THIS SCRIPT WAS FUNDED BY THE NATIONAL INSTITUTES OF HEALTH, GRANT # R01DC006014 TO PAMELA SOUZA
 # # # # # # # # # # # # # # # # # # # # # # # #
 
 # COLLECT ALL THE USER INPUT
@@ -22,6 +23,7 @@ form Pitch settings tool: Select directories & starting parameters
 	sentence logFile /home/dan/Desktop/PitchSettings.log
 	sentence Sound_extension .wav
 	integer startingFileNum 1
+	real defaultZoomDuration 0
 	integer defaultMinPitch 50
 	integer defaultMaxPitch 300
 	integer viewRangeMin 1
@@ -77,7 +79,11 @@ for curFile from startingFileNum to fileCount
 
 	# SHOW THE EDITOR WINDOW
 	zoomStart = 0
-	zoomEnd = totalDur
+	if defaultZoomDuration > 0
+		zoomEnd = defaultZoomDuration
+	else
+		zoomEnd = totalDur
+	endif
 	select Sound 'filename$'
 	View & Edit
 	editor Sound 'filename$'
