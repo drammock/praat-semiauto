@@ -15,15 +15,15 @@
 #
 # AUTHOR: DANIEL MCCLOY: (drmccloy@uw.edu)
 # LICENSED UNDER THE GNU GENERAL PUBLIC LICENSE v3.0: http://www.gnu.org/licenses/gpl.html
-# DEVELOPMENT OF THIS SCRIPT WAS FUNDED BY THE NATIONAL INSTITUTES OF HEALTH, GRANT # 10186254 TO PAMELA SOUZA
+# DEVELOPMENT OF THIS SCRIPT WAS FUNDED BY THE NATIONAL INSTITUTES OF HEALTH, GRANT # R01DC006014 TO PAMELA SOUZA
 # ################################################################################################################## #
 
 # COLLECT ALL THE USER INPUT
 form Pitch tier extractor: Select directories & starting parameters
 	comment See the script's header for explanation of the form variables.
-	sentence logFile /home/dan/Desktop/PitchTierExtraction.log
-	sentence Output_directory /home/dan/Desktop/pitchtiers/
-	sentence Sound_directory /home/dan/Desktop/sounds2/
+	sentence logFile ~/Desktop/PitchTierExtraction.log
+	sentence Output_directory ~/Desktop/pitchtiers/
+	sentence Sound_directory ~/Desktop/sounds/
 	sentence Sound_extension .wav
 	integer startingFileNum 1
 	integer defaultMinPitch 75

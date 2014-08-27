@@ -19,8 +19,8 @@
 # COLLECT ALL THE USER INPUT
 form Pitch settings tool: Select directories & starting parameters
 	comment See the script's header for explanation of the form variables.
-	sentence Sound_directory /home/dan/Desktop/sounds
-	sentence logFile /home/dan/Desktop/PitchSettings.log
+	sentence Sound_directory ~/Desktop/sounds
+	sentence logFile ~/Desktop/PitchSettings.log
 	sentence Sound_extension .wav
 	integer startingFileNum 1
 	real defaultZoomDuration 0

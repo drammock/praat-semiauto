@@ -6,7 +6,7 @@
 #
 # AUTHOR: DANIEL MCCLOY: (drmccloy@uw.edu)
 # LICENSED UNDER THE GNU GENERAL PUBLIC LICENSE v3.0 OR HIGHER: http://www.gnu.org/licenses/gpl.html
-# DEVELOPMENT OF THIS SCRIPT WAS FUNDED BY THE NATIONAL INSTITUTES OF HEALTH, GRANT # 10186254 TO PAMELA SOUZA
+# DEVELOPMENT OF THIS SCRIPT WAS FUNDED BY THE NATIONAL INSTITUTES OF HEALTH, GRANT # R01DC006014 TO PAMELA SOUZA
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 
 

@@ -21,13 +21,13 @@
 #
 # AUTHORS: DANIEL MCCLOY: (drmccloy@uw.edu) & AUGUST MCGRATH
 # LICENSED UNDER THE GNU GENERAL PUBLIC LICENSE v3.0 OR HIGHER: http://www.gnu.org/licenses/gpl.html
-# DEVELOPMENT OF THIS SCRIPT WAS FUNDED BY THE NATIONAL INSTITUTES OF HEALTH, GRANT # 10186254 TO PAMELA SOUZA
+# DEVELOPMENT OF THIS SCRIPT WAS FUNDED BY THE NATIONAL INSTITUTES OF HEALTH, GRANT # R01DC006014 TO PAMELA SOUZA
 # ########################################################################################################################### #
 
 # COLLECT ALL THE USER INPUT
 form Select directories for TextGrids and Sound files
-	sentence Textgrid_directory /home/dan/Desktop/textgrids/
-	sentence Sound_directory /home/dan/Desktop/sounds/
+	sentence Textgrid_directory ~/Desktop/textgrids/
+	sentence Sound_directory ~/Desktop/sounds/
 	sentence Sound_extension .wav
 	comment Which TextGrid tier contains your segment labels?
 	integer Label_tier 1

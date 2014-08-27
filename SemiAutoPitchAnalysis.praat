@@ -23,13 +23,13 @@
 #
 # AUTHOR: DANIEL MCCLOY: (drmccloy@uw.edu)
 # LICENSED UNDER THE GNU GENERAL PUBLIC LICENSE v3.0 OR HIGHER: http://www.gnu.org/licenses/gpl.html
-# DEVELOPMENT OF THIS SCRIPT WAS FUNDED BY THE NATIONAL INSTITUTES OF HEALTH, GRANT # 10186254 TO PAMELA SOUZA
+# DEVELOPMENT OF THIS SCRIPT WAS FUNDED BY THE NATIONAL INSTITUTES OF HEALTH, GRANT # R01DC006014 TO PAMELA SOUZA
 # ########################################################################################################################### #
 
 # COLLECT ALL THE USER INPUT
 form Select directories for TextGrids and Sound files
-	sentence Textgrid_directory /home/dan/Desktop/textgrids/
-	sentence Sound_directory /home/dan/Desktop/sounds/
+	sentence Textgrid_directory ~/Desktop/textgrids/
+	sentence Sound_directory ~/Desktop/sounds/
 	sentence Sound_extension .wav
 	comment Which TextGrid tier contains your segment labels?
 	integer Label_tier 1
@@ -39,7 +39,7 @@ form Select directories for TextGrids and Sound files
 	comment see during analysis? (enter "0" to view the entire file)
 	real Zoom_duration 6
 	comment Full path of the output file:
-	sentence Output_file /home/dan/Desktop/PitchAnalysisResults.txt
+	sentence Output_file ~/Desktop/PitchAnalysisResults.txt
 	comment Default pitch analysis settings (you can adjust them file by file):
 	integer Default_min_pitch 75
 	integer Default_max_pitch 500
