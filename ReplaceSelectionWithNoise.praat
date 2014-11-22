@@ -28,7 +28,7 @@
 # TextGrid editor that was already open prior to the changes being made.
     ed_info$ = Editor info
     sn_info$ = Sound info
-	tmp_snd = Extract selected sound (preserve times)
+    tmp_snd = Extract selected sound (preserve times)
     Close
 endeditor
 win_st = extractNumber (ed_info$, "Window start:")
@@ -48,5 +48,5 @@ Formula (part): sel_st, sel_nd, 1, 1, "randomGauss(0," + string$(rms) +")"
 plusObject: "TextGrid " + tg_name$
 View & Edit
 editor: "TextGrid " + tg_name$
-	Zoom: win_st, win_nd
+    Zoom: win_st, win_nd
     Select: sel_st, sel_nd
