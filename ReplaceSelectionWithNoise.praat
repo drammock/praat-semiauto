@@ -11,12 +11,22 @@
 # Optionally, from the script window choose "File > Add to menu..." to 
 # permanently add this script as a menu command in all future TextGrid Editors.
 #
-# LIMITATIONS: At present, the script only works in TextGrid Editors opened with
-# Sound objects, not from LongSound objects. So far no workaround is known,
-# since LongSound objects don't have the "Formula (part)" command available.
-# Probably it would require cutting the LongSound into pieces at the start and
-# end of the selection, and concatenating the white noise in between the
-# beginning piece and the end piece.
+# LIMITATIONS AND WARNINGS: This script works best with TextGrid editors opened
+# with Sound objects, rather than LongSound objects. When working in TextGrid
+# editors with LongSound objects, Praat can't make changes to the sound file
+# directly, so the script has to create a copy of the LongSound on your Desktop
+# (by first extracting the parts of the LongSound before and after the selection
+# and concatenating them together with the noise sound in betweeen). This might
+# or might not work on your computer, depending on how long the LongSound file
+# is (e.g., if it is too big to fit in memory, then extracting all but the
+# selection is likely to also be too big to fit in memory, and may lead to an
+# "out of memory" error and possibly a Praat crash). Therefore, it is STRONGLY
+# recommended that, when working with LongSound files, you save your TextGrid
+# (and any other open, unsaved files in Praat) before running the "replace
+# selection with noise" script. If you do experience out-of-memory errors or
+# crashes, you can either run the script on a computer with more RAM, or cut the
+# LongSound into smaller pieces and anonymize them separately as Sound objects,
+# then recombine them later.
 #
 # AUTHOR: Daniel McCloy <drmccloy@uw.edu>
 # LICENSE: BSD 3-clause
