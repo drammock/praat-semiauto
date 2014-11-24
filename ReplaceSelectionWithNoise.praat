@@ -1,10 +1,11 @@
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Praat script "Replace selection with noise"
+#
 # This script runs within a TextGrid Editor window, with the sole function of
 # replacing a selected span of sound with white noise. The noise will have an
-# amplitude matching the RMS amplitude of the sound file. This is useful for, 
-# e.g., anonymizing field recordings when the speaker or interviewer mentions
-# another individual by name.
+# amplitude matching the RMS amplitude of the selected interval. This is useful
+# for, e.g., anonymizing field recordings when the speaker or interviewer
+# mentions another individual by name.
 #
 # USAGE: In a TextGrid editor, choose menu command File > Open editor script...
 # With a span of sound selected, switch to the script window and choose "Run".
@@ -28,14 +29,17 @@
 # LongSound into smaller pieces and anonymize them separately as Sound objects,
 # then recombine them later.
 #
+# NOTE: TextGrid editors create a *copy* of the Sound they are opened with.
+# Because of this, changes made to the original Sound after the TextGrid editor
+# is opened will not be reflected in the TextGrid editor. For this reason, this
+# script unfortunately has to close and re-open the TextGrid Editor window after
+# each selection is anonymized.
+#
 # AUTHOR: Daniel McCloy <drmccloy@uw.edu>
 # LICENSE: BSD 3-clause
 # VERSION 0.3 (2014 11 23)
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-# NOTE: This script unfortunately has to close and re-open the TextGrid Editor
-# window, because changes it makes to the Sound file are not picked up by a
-# TextGrid editor that was already open prior to the changes being made.
 	ed_info$ = Editor info
 	sn_info$ = nocheck Sound info
 	if sn_info$ = ""
