@@ -13,8 +13,11 @@
 # permanently add this script as a menu command in all future TextGrid Editors.
 #
 # LIMITATIONS AND WARNINGS: This script works best with TextGrid editors opened
-# with Sound objects, rather than LongSound objects. When working in TextGrid
-# editors with LongSound objects, Praat can't make changes to the sound file
+# with Sound objects, rather than LongSound objects. When working with Sound
+# objects, it assumes that the Sound object has not been modified or deleted
+# from the Objects list after opening the TextGrid editor, and furthermore it
+# assumes that the name of the Sound object in the Objects list is unique.
+# When working with LongSound objects, Praat can't make changes to the sound
 # directly, so the script has to create a copy of the LongSound on your Desktop
 # (by first extracting the parts of the LongSound before and after the selection
 # and concatenating them together with the noise sound in betweeen). This might
@@ -37,7 +40,7 @@
 #
 # AUTHOR: Daniel McCloy <drmccloy@uw.edu>
 # LICENSE: BSD 3-clause
-# VERSION 0.3 (2014 11 23)
+# VERSION 0.4 (2014 11 24)
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 	ed_info$ = Editor info
@@ -69,7 +72,8 @@ if ls
 	file_st = Get start time
 	file_nd = Get end time
 	ls_st = Extract part: file_st, sel_st, "yes"
-	noise = Create Sound from formula: "noise", nchan, sel_st, sel_nd, fs, "randomGauss(0," + string$(rms) +")"
+	noise = Create Sound from formula: "noise", nchan, sel_st, sel_nd, fs,
+									   ... "randomGauss(0," + string$(rms) +")"
 	selectObject: "LongSound " + sn_name$
 	ls_nd = Extract part: sel_nd, file_nd, "yes"
 	selectObject: ls_st
